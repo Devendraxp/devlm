@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -6,6 +5,26 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  INDEXED
+  FAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
 }
 
 model User {
@@ -16,8 +35,19 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  role          String?
+  banned        Boolean?
+  banReason     String?
+  banExpires    DateTime?
+
+  sessions Session[]
+  accounts Account[]
+
+  subscription Subscription?
+  threads      Thread[]
+  documents    Document[]
+  dailyUsages  DailyUsage[]
+  orders       Order[]
 
   @@unique([email])
   @@map("user")
@@ -69,4 +99,152 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Plan {
+  id                         String   @id @default(cuid())
+  name                       String   @unique
+  pricePaise                 Int      @default(0)
+  maxTokensPerDay            Int      @default(10000)
+  maxThreadsPerDay           Int      @default(5)
+  maxMessagesPerThreadPerDay Int      @default(20)
+  maxDocsPerDay              Int      @default(3)
+  maxDocSizeBytes            Int      @default(5242880)
+  maxDocumentsTotal          Int      @default(20)
+  maxThreadsTotal            Int?
+  isActive                   Boolean  @default(true)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  subscriptions Subscription[]
+  orders        Order[]
+
+  @@map("plan")
+}
+
+model Subscription {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt        DateTime?
+  razorpaySubId      String?            @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("subscription")
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  amountPaise       Int
+  razorpayOrderId   String  @unique
+  razorpayPaymentId String?
+  paid              Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("order")
+}
+
+model DailyUsage {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  totalTokens     Int      @default(0)
+  threadsCreated  Int      @default(0)
+  messagesCreated Int      @default(0)
+  docsUploaded    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@map("daily_usage")
+}
+
+model ThreadDailyUsage {
+  id              String   @id @default(cuid())
+  threadId        String
+  thread          Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId          String
+  date            DateTime @db.Date
+  messagesCreated Int      @default(0)
+
+  @@unique([threadId, date])
+  @@index([userId, date])
+  @@map("thread_daily_usage")
+}
+
+model Thread {
+  id                String             @id @default(cuid())
+  title             String             @default("New Notebook")
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          Message[]
+  threadDocuments   ThreadDocument[]
+  threadDailyUsages ThreadDailyUsage[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([userId])
+  @@map("thread")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  threadId   String
+  thread     Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  role       Role
+  content    String   @db.Text
+  tokenCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([threadId])
+  @@index([threadId, createdAt])
+  @@map("message")
+}
+
+model Document {
+  id              String           @id @default(cuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName        String
+  fileType        String
+  fileUrl         String?
+  sizeBytes       Int
+  textContent     String?          @db.Text
+  status          DocumentStatus   @default(PENDING)
+  threadDocuments ThreadDocument[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@map("document")
+}
+
+model ThreadDocument {
+  id         String   @id @default(cuid())
+  threadId   String
+  thread     Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([threadId, documentId])
+  @@map("thread_document")
 }

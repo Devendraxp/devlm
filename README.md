@@ -1,36 +1,121 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevLM
 
-## Getting Started
+AI chat platform that lets you build a personal knowledge base and chat over it. Index documents, websites, GitHub repos, and YouTube videos, then query them through a streaming AI assistant with built-in web search.
 
-First, run the development server:
+## Stack
+
+- Next.js 16, React 19, Tailwind CSS 4
+- PostgreSQL with Prisma
+- Better Auth for email/password auth with OTP and magic links
+- Qdrant for vector storage
+- Groq for LLM inference
+- Google Gemini for embeddings
+- Tavily for web search
+- UploadThing for file uploads
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+git clone https://github.com/Devendraxp/devlm
+cd devlm
+pnpm install
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Server starts on http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+# Database
+DATABASE_URL=postgresql://...
 
-## Learn More
+# Auth
+BETTER_AUTH_SECRET=...
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Vector store
+QDRANT_URL=https://...
+QDRANT_API_KEY=...
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# AI
+TAVILY_API_KEY=...
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# GitHub indexing
+GITHUB_ACCESS_TOKEN=...
 
-## Deploy on Vercel
+# Email (SMTP)
+SMTP_HOST=...
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=...
+SMTP_PASSWORD=...
+SMTP_FROM_EMAIL=...
+SMTP_FROM_NAME=...
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Features
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Chat with RAG** — Streaming AI chat powered by Groq. Each thread maintains its own document context. Queries are enhanced with HyDE (hypothetical document embeddings) before retrieval to improve result relevance.
+
+**Document indexing** — Index content into a thread's knowledge base from multiple sources: PDF, DOCX, PPTX, plain text files, web URLs, crawled websites, GitHub repositories, and YouTube videos (via transcript). Indexed chunks are embedded with Gemini and stored in Qdrant.
+
+**Web search** — The assistant can search the web via Tavily and extract full page content when needed, grounding responses in current information.
+
+**Thread management** — Conversations are organized into threads. Each thread has its own document scope. Messages and thread state are persisted in PostgreSQL.
+
+**Auth** — Email/password login with required email verification. Also supports OTP and magic link sign-in. Admin role available for user management.
+
+## API
+
+```
+# Chat
+POST   /api/chat                              stream a chat response
+
+# Document indexing
+POST   /api/process-document                  upload file (PDF, DOCX, PPTX, TXT)
+POST   /api/process-document/url              index a URL
+POST   /api/process-document/crawl            crawl and index a website
+POST   /api/process-document/github           index a GitHub repository
+POST   /api/process-document/youtube          index a YouTube video
+
+# Threads
+GET    /api/threads                           list threads
+POST   /api/threads                           create thread
+GET    /api/threads/[threadId]/messages       get messages
+GET    /api/threads/[threadId]/documents      list indexed documents
+
+# Auth
+GET/POST /api/auth/[...all]                   Better Auth handler
+GET    /api/auth/check-user                   check if user exists
+
+# Uploads
+POST   /api/uploadthing                       UploadThing file upload handler
+```
+
+## Project Structure
+
+```
+app/
+  api/          route handlers
+  chat/         chat UI page
+  login/        auth pages (login, signup, forgot/reset password)
+  profile/      user profile
+components/
+  chat/         chat sidebar, thread view, data index panel
+  assistant-ui/ streaming message renderer with markdown and tool fallback
+lib/
+  auth.ts       Better Auth configuration
+  prisma.ts     Prisma client
+  email.ts      SMTP email sender
+rag/
+  chat.ts       query enhancement, HyDE, RAG retrieval
+  vectorStore.ts Qdrant vector store wrapper
+  *Indexing.ts  per-source indexing pipelines
+tools/
+  websearch.ts  Tavily web search tool
+  extractWebPage.ts page content extractor
+  crawlWebsite.ts site crawler
+```
