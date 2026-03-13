@@ -18,6 +18,7 @@ import {
   Network,
 } from "lucide-react";
 import { UploadButton } from "@/lib/uploadthing";
+import { toast } from "sonner";
 
 type SourceType = "document" | "text" | "url" | "github" | "youtube" | "crawl";
 
@@ -108,15 +109,25 @@ export function DataIndexPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ documentId, threadId }),
       });
-      setSources((prev) =>
-        prev.map((s) =>
-          s.id === documentId ? { ...s, status: res.ok ? "indexed" : "failed" } : s
-        )
-      );
+
+      if (res.ok) {
+        setSources((prev) =>
+          prev.map((s) => (s.id === documentId ? { ...s, status: "indexed" } : s))
+        );
+        toast.success("Document indexed successfully");
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to process document";
+        setSources((prev) =>
+          prev.map((s) => (s.id === documentId ? { ...s, status: "failed" } : s))
+        );
+        toast.error(errorMessage);
+      }
     } catch {
       setSources((prev) =>
         prev.map((s) => (s.id === documentId ? { ...s, status: "failed" } : s))
       );
+      toast.error("An unexpected error occurred while processing document");
     }
   };
 
@@ -137,9 +148,15 @@ export function DataIndexPanel({
           { id: data.documentId, type: "text", name, status: "indexed" },
         ]);
         setTextInput("");
+        toast.success("Text indexed successfully");
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to index text";
+        toast.error(errorMessage);
       }
     } catch (e) {
       console.error(e);
+      toast.error("An unexpected error occurred");
     } finally {
       setTextLoading(false);
     }
@@ -163,16 +180,21 @@ export function DataIndexPanel({
           prev.map((s) => (s.id === tempId ? { ...s, id: data.documentId, status: "indexed" } : s))
         );
         setUrlInput("");
+        toast.success("URL indexed successfully");
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to index URL";
         setSources((prev) =>
           prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
         );
+        toast.error(errorMessage);
       }
     } catch (e) {
       console.error(e);
       setSources((prev) =>
         prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
       );
+      toast.error("An unexpected error occurred");
     } finally {
       setUrlLoading(false);
     }
@@ -203,16 +225,21 @@ export function DataIndexPanel({
           )
         );
         setYoutubeInput("");
+        toast.success("YouTube video indexed successfully");
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to index YouTube video";
         setSources((prev) =>
           prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
         );
+        toast.error(errorMessage);
       }
     } catch (e) {
       console.error(e);
       setSources((prev) =>
         prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
       );
+      toast.error("An unexpected error occurred");
     } finally {
       setYoutubeLoading(false);
     }
@@ -244,16 +271,21 @@ export function DataIndexPanel({
           )
         );
         setGithubInput("");
+        toast.success("GitHub repository indexed successfully");
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to index GitHub repository";
         setSources((prev) =>
           prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
         );
+        toast.error(errorMessage);
       }
     } catch (e) {
       console.error(e);
       setSources((prev) =>
         prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
       );
+      toast.error("An unexpected error occurred");
     } finally {
       setGithubLoading(false);
     }
@@ -287,16 +319,21 @@ export function DataIndexPanel({
         );
         setCrawlUrl("");
         setCrawlInstruction("");
+        toast.success("Crawl started/processed successfully");
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to start crawl";
         setSources((prev) =>
           prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
         );
+        toast.error(errorMessage);
       }
     } catch (e) {
       console.error(e);
       setSources((prev) =>
         prev.map((s) => (s.id === tempId ? { ...s, status: "failed" } : s))
       );
+      toast.error("An unexpected error occurred");
     } finally {
       setCrawlLoading(false);
     }
@@ -341,9 +378,11 @@ export function DataIndexPanel({
                   setSources((prev) => [...prev, newSource]);
                   processDocument(docId, file.name, "document");
                 });
+                toast.success("File uploaded successfully");
               }}
               onUploadError={(error) => {
                 console.error("Upload error:", error.message);
+                toast.error(`Upload failed: ${error.message}`);
               }}
               appearance={{
                 button:
