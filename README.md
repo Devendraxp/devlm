@@ -2,6 +2,10 @@
 
 AI chat platform that lets you build a personal knowledge base and chat over it. Index documents, websites, GitHub repos, and YouTube videos, then query them through a streaming AI assistant with built-in web search.
 
+## Architecture
+
+![Architecture of Application](https://i.ibb.co/0RRJGsqs/lip.png)
+
 ## Stack
 
 - Next.js 16, React 19, Tailwind CSS 4
