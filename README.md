@@ -28,32 +28,23 @@ Server starts on http://localhost:3000.
 ## Environment Variables
 
 ```
-# Database
-DATABASE_URL=postgresql://...
-
-# Auth
-BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=http://localhost:3000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Vector store
-QDRANT_URL=https://...
-QDRANT_API_KEY=...
-
-# AI
-TAVILY_API_KEY=...
-
-# GitHub indexing
-GITHUB_ACCESS_TOKEN=...
-
-# Email (SMTP)
-SMTP_HOST=...
+QDRANT_URL=
+QDRANT_API_KEY=
+DATABASE_URL=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+GROQ_API_KEY=
+GOOGLE_API_KEY=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM_NAME=
+SMTP_FROM_EMAIL=
+SMTP_HOST=
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=...
-SMTP_PASSWORD=...
-SMTP_FROM_EMAIL=...
-SMTP_FROM_NAME=...
+UPLOADTHING_TOKEN=
+TAVILY_API_KEY=
+GITHUB_ACCESS_TOKEN=
 ```
 
 ## Features
