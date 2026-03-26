@@ -1,8 +1,0 @@
-ignoredBuiltDependencies:
-  - '@prisma/engines'
-  - msgpackr-extract
-  - msw
-  - prisma
-  - sharp
-  - tesseract.js
-  - unrs-resolver
