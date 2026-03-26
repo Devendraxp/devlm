@@ -6,7 +6,7 @@ import { extractWebPageTool } from "@/tools/extractWebPage";
 import { crawlWebsiteTool } from "@/tools/crawlWebsite";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@/generated/prisma/enums";
+import { Role } from "@/generated/prisma/client";
 import { headers } from "next/headers";
 
 export async function POST(req: Request) {
@@ -70,7 +70,8 @@ export async function POST(req: Request) {
       );
       ragContext = ragData
         .map((doc, i) => `Source ${i + 1}:\n${doc.pageContent}`)
-        .join("\n\n");
+        .join("\n\n")
+        .slice(0, 4000);
     }
   }
 
@@ -117,7 +118,7 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: groq("openai/gpt-oss-20b"),
-      messages: await convertToModelMessages(messages),
+      messages: await convertToModelMessages(messages.slice(-6)),
       system: SYSTEM_PROMPT,
       onFinish,
     });
@@ -140,7 +141,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: groq("openai/gpt-oss-20b"),
-    messages: await convertToModelMessages(messages),
+    messages: await convertToModelMessages(messages.slice(-6)),
     system: SYSTEM_PROMPT,
     tools: { webSearchTool, extractWebPageTool, crawlWebsiteTool },
     stopWhen: stepCountIs(5),

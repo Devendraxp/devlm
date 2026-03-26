@@ -35,6 +35,7 @@ Question:
 ${userQuery}
 
 Write a single coherent explanation. Do not say you are guessing.`,
+  
   });
   return text;
 }
@@ -56,7 +57,7 @@ export async function retrieveRAGData(query: string, threadId: string) {
   });
 
   try {
-    const relevantDocs = await vectorStore.similaritySearch(query, 5, {
+    const relevantDocs = await vectorStore.similaritySearch(query, 3, {
       must: [
         {
           key: "metadata.thread_id",
